@@ -1731,28 +1731,40 @@ function netRow(type, iface, data, cliCount, country, isLast) {
             ];
             b.appendChild(kvGrid(cfgItems));
 
-            // Per-link table
+            // Per-link table — columns differ for STA vs AP
             var links = iface.links || [];
             if (links.length) {
                 b.appendChild(sp('Links', 'display:block;color:#88888899;font-size:11px;font-weight:bold;letter-spacing:0.5px;margin:10px 0 6px'));
                 var tbl = node('table', { style: 'width:100%;border-collapse:collapse;font-size:12px' });
                 var thead = node('tr', { style: 'color:#555' });
-                ['Link','Freq','CH','BW','TX','DFS','Util'].forEach(function(h) {
+                var isSta = iface.mode === 'sta';
+                (isSta ? ['Link','Freq','CH','BW','Signal'] : ['Link','Freq','CH','BW','TX','DFS','Util']).forEach(function(h) {
                     thead.appendChild(node('th', { style: 'text-align:left;padding:2px 8px;font-weight:normal' }, h));
                 });
                 tbl.appendChild(thead);
                 links.forEach(function(lk) {
                     var tr = node('tr', { style: 'color:#aaa' });
-                    [String(lk.link_id),
-                     lk.freq    ? lk.freq    + ' MHz' : '—',
-                     lk.channel ? String(lk.channel) : '—',
-                     lk.bw_mhz ? lk.bw_mhz + ' MHz' : '—',
-                     lk.txpower != null ? lk.txpower + ' dBm' : '—',
-                     lk.dfs_active ? 'CAC' : '—',
-                     lk.chan_util != null ? Math.min(lk.chan_util, 100) + '%' : 'n/a',
-                    ].forEach(function(v) {
-                        tr.appendChild(node('td', { style: 'padding:3px 8px' }, v));
-                    });
+                    var cells;
+                    if (isSta) {
+                        var sigStr = lk.signal != null ? lk.signal + ' dBm' : '—';
+                        var sigColor = lk.signal != null ? (lk.signal >= -65 ? '#1d9e75' : lk.signal >= -75 ? '#f5a623' : '#e24b4a') : '#444';
+                        cells = [String(lk.link_id),
+                            lk.freq    ? lk.freq    + ' MHz' : '—',
+                            lk.channel ? String(lk.channel) : '—',
+                            lk.bw_mhz  ? lk.bw_mhz  + ' MHz' : '—',
+                        ];
+                        cells.forEach(function(v) { tr.appendChild(node('td', { style: 'padding:3px 8px' }, v)); });
+                        tr.appendChild(node('td', { style: 'padding:3px 8px;color:' + sigColor }, sigStr));
+                    } else {
+                        [String(lk.link_id),
+                         lk.freq    ? lk.freq    + ' MHz' : '—',
+                         lk.channel ? String(lk.channel) : '—',
+                         lk.bw_mhz  ? lk.bw_mhz  + ' MHz' : '—',
+                         lk.txpower != null ? lk.txpower + ' dBm' : '—',
+                         lk.dfs_active ? 'CAC' : '—',
+                         lk.chan_util != null ? Math.min(lk.chan_util, 100) + '%' : 'n/a',
+                        ].forEach(function(v) { tr.appendChild(node('td', { style: 'padding:3px 8px' }, v)); });
+                    }
                     tbl.appendChild(tr);
                 });
                 b.appendChild(tbl);

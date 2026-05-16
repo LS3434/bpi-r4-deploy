@@ -948,25 +948,49 @@ function buildStaIfaceMap(iwData) {
     return map;
 }
 
-// Parse per-link BSSID/freq from "iw dev sta-mld0 link" raw output
+// Parse per-link BSSID/freq from "iw dev sta-mld0 link" raw output.
+// Handles both multi-link format ("Link N BSSID xx") and single-link format ("Connected to xx").
 function parseStaMldLinks(raw) {
     const links = [];
     const lines = raw ? raw.split('\n') : [];
+
+    function parseLinkBlock(link, startIdx) {
+        for (let j = startIdx; j < lines.length && j < startIdx + 14; j++) {
+            if (lines[j].match(/Link\s+\d+\s+BSSID/i)) break;
+            const fm = lines[j].match(/freq:\s+(\d+)/);
+            if (fm) { link.freq = parseInt(fm[1]); link.channel = freqToChannel(link.freq); }
+            const bwm = lines[j].match(/width:\s+(\d+)\s+MHz/);
+            if (bwm) { link.bw_mhz = parseInt(bwm[1]); continue; }
+            if (!link.bw_mhz && /bitrate:/i.test(lines[j])) {
+                const bwRate = lines[j].match(/(\d+)MHz\s+(?:EHT|HE|VHT|HT)/i);
+                if (bwRate) link.bw_mhz = parseInt(bwRate[1]);
+            }
+            const txm = lines[j].match(/tx power:\s+(\d+(?:\.\d+)?)/i);
+            if (txm) link.txpower = Math.round(parseFloat(txm[1]));
+            const sigm = lines[j].match(/signal:\s*([-\d]+)\s*dBm/i);
+            if (sigm) link.signal = parseInt(sigm[1]);
+        }
+    }
+
+    // Multi-link format: "Link N BSSID xx:xx:..."
     for (let i = 0; i < lines.length; i++) {
         const lm = lines[i].match(/Link\s+(\d+)\s+BSSID\s+(\S+)/i);
         if (!lm) continue;
-        const link = { link_id: parseInt(lm[1]), bssid: lm[2], freq: null, channel: null, bw_mhz: null, txpower: null };
-        for (let j = i + 1; j < lines.length && j < i + 6; j++) {
-            if (lines[j].match(/Link\s+\d+\s+BSSID/i)) break;
-            const fm = lines[j].match(/freq:\s+(\d+)/);
-            if (fm) link.freq = parseInt(fm[1]);
-            const bwm = lines[j].match(/width:\s+(\d+)\s+MHz/);
-            if (bwm) link.bw_mhz = parseInt(bwm[1]);
-            const txm = lines[j].match(/tx power:\s+(\d+(?:\.\d+)?)/i);
-            if (txm) link.txpower = Math.round(parseFloat(txm[1]));
-        }
+        const link = { link_id: parseInt(lm[1]), bssid: lm[2], freq: null, channel: null, bw_mhz: null, txpower: null, signal: null };
+        parseLinkBlock(link, i + 1);
         links.push(link);
     }
+
+    // Single-link fallback: "Connected to xx:xx:... (on sta-mld0)"
+    if (links.length === 0) {
+        const cm = (lines[0] || '').match(/Connected to\s+(\S+)\s+\(on/i);
+        if (cm) {
+            const link = { link_id: 0, bssid: cm[1], freq: null, channel: null, bw_mhz: null, txpower: null, signal: null };
+            parseLinkBlock(link, 1);
+            links.push(link);
+        }
+    }
+
     return links;
 }
 
