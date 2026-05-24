@@ -21,12 +21,11 @@ mv mtk-clone mtk-openwrt-feeds
 \cp -r my_files/999-sfp-11-rtl8261be-mdio-none.patch mtk-openwrt-feeds/25.12/files/target/linux/mediatek/patches-6.12
 \cp -r my_files/999-fix-00-xfrm-sw-sa-offload-ok.patch mtk-openwrt-feeds/25.12/files/target/linux/mediatek/patches-6.12
 
-\cp -r my_files/MXL862XX/*.patch mtk-openwrt-feeds/25.12/files/target/linux/mediatek/patches-6.12
+ls my_files/MXL862XX/*.patch 2>/dev/null && \cp -r my_files/MXL862XX/*.patch mtk-openwrt-feeds/25.12/files/target/linux/mediatek/patches-6.12 || true
 
 cd openwrt
 bash ../mtk-openwrt-feeds/autobuild/unified/autobuild.sh filogic-mac80211-mt798x_rfb-wifi7_nic prepare
 
-uci/applications
 \cp -r ../my_files/luci-app-lite-watchdog/ feeds/luci/applications
 \cp -r ../my_files/luci-app-sms-tool-js-main/luci-app-sms-tool-js/ feeds/luci/applications
 
@@ -43,12 +42,13 @@ chmod +x files/etc/uci-defaults/99-set-hostname
 
 \cp -r ../my_files/qmi.sh package/network/utils/uqmi/files/lib/netifd/proto/
 chmod -R 755 package/network/utils/uqmi/files/lib/netifd/proto
-chmod -R 755 feeds/luci/applications/luci-app-modemdata/root
 chmod -R 755 feeds/luci/applications/luci-app-sms-tool-js/root
-chmod -R 755 feeds/packages/utils/modemdata/files/usr/share
 
+\cp ../my_files/bpi-r4-pro/uboot-mediatek-Makefile package/boot/uboot-mediatek/Makefile
 \cp -r ../configs/my_defconfig-wifimgr-universal-pro .config
-make defconfig\cp -r ../my_files/453-w-add-bpi-r4-nvme-dtso.patch target/linux/mediatek/patches-6.12/
+make defconfig
+\cp -r ../my_files/453-w-add-bpi-r4-nvme-dtso.patch target/linux/mediatek/patches-6.12/
+\cp -r ../my_files/455-w-add-bpi-r4-pro-nvme-dtso.patch target/linux/mediatek/patches-6.12/
 \cp -r ../my_files/450-w-nand-mmc-add-bpi-r4.patch package/boot/uboot-mediatek/patches/450-add-bpi-r4.patch
 \cp -r ../my_files/451-w-add-bpi-r4-nvme.patch package/boot/uboot-mediatek/patches/451-add-bpi-r4-nvme.patch
 \cp ../my_files/452-w-add-bpi-r4-nvme-rfb.patch package/boot/uboot-mediatek/patches/452-add-bpi-r4-nvme-rfb.patch
@@ -61,7 +61,6 @@ make defconfig\cp -r ../my_files/453-w-add-bpi-r4-nvme-dtso.patch target/linux/m
 \cp -r ../my_files/bpi-r4-pro/patches-kernel/*.patch target/linux/mediatek/patches-6.12/
 \cp ../my_files/bpi-r4-pro/patches-uboot/471-add-bpi-r4-pro-8x.patch package/boot/uboot-mediatek/patches/
 #\cp ../my_files/bpi-r4-pro/patches-uboot/472-add-bpi-r4-pro-8x-makefile.patch package/boot/uboot-mediatek/patches/
-\cp ../my_files/bpi-r4-pro/uboot-mediatek-Makefile package/boot/uboot-mediatek/Makefile
 #\cp -r ../my_files/w-sd-nand-mmc-nvme-ddr4-filogic.mk target/linux/mediatek/image/filogic.mk
 mv target/linux/mediatek/image/filogic-extra.mk target/linux/mediatek/image/filogic-extra.mk.disabled
 
@@ -70,12 +69,14 @@ echo "CONFIG_BLK_DEV_NVME=y" >> target/linux/mediatek/filogic/config-6.12
 \cp -r ../my_files/999-fitblk-02-w-add-bpi-r4-nvme-fitblk.patch target/linux/mediatek/patches-6.12
 
 \cp -r ../my_files/sms-tool/ feeds/packages/utils/sms-tool
-\cp -r ../my_files/modemdata-main/ feeds/packages/utils/modemdata 
-\cp -r ../my_files/luci-app-modemdata-main/luci-app-modemdata/ feeds/l
+\cp -r ../my_files/modemdata-main/ feeds/packages/utils/modemdata
+\cp -r ../my_files/luci-app-modemdata-main/luci-app-modemdata/ feeds/luci/applications/luci-app-modemdata
+chmod -R 755 feeds/luci/applications/luci-app-modemdata
+chmod -R 755 feeds/packages/utils/modemdata/files/usr/share
 
-echo "CONFIG_PACKAGE_trusted-firmware-a-mt7988-emmc-comb=y" >> .config
-echo "CONFIG_PACKAGE_trusted-firmware-a-mt7988-sdmmc-comb=y" >> .config
-echo "CONFIG_PACKAGE_trusted-firmware-a-mt7988-spim-nand-ubi-comb=y" >> .config
+echo "CONFIG_PACKAGE_trusted-firmware-a-mt7988-emmc-comb-4bg=y" >> .config
+echo "CONFIG_PACKAGE_trusted-firmware-a-mt7988-sdmmc-comb-4bg=y" >> .config
+echo "CONFIG_PACKAGE_trusted-firmware-a-mt7988-spim-nand-ubi-comb-4bg=y" >> .config
 
 
 # MxL862xx DSA switch driver (dangowrt generic patches)
@@ -94,5 +95,3 @@ rm -f target/linux/mediatek/patches-6.12/773-v7.1-net-dsa-add-bridge-member-iter
 echo "CONFIG_NET_DSA_MXL862=y" >> .config
 
 bash ../mtk-openwrt-feeds/autobuild/unified/autobuild.sh filogic-mac80211-mt798x_rfb-wifi7_nic build
-
-
